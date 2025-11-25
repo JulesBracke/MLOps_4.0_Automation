@@ -1,0 +1,23 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: animals-dataprep
+version: 1
+type: command
+
+display_name: Animals Data Preparation
+description: "Prepare raw animal image data into a standard folder structure"
+
+inputs:
+  data:
+    type: uri_folder
+
+outputs:
+  output_data:
+    type: uri_folder
+
+environment: azureml:animals-pillow-env:1
+
+code: .
+command: >-
+  python dataprep.py
+  --data ${{inputs.data}}
+  --output_data ${{outputs.output_data}}

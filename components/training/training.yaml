@@ -1,0 +1,30 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: animals-training
+version: 1
+type: command
+
+display_name: Animals Training
+description: "Train a simple image classifier"
+
+inputs:
+  training_folder:
+    type: uri_folder
+  testing_folder:
+    type: uri_folder
+  epochs:
+    type: integer
+    default: 5
+
+outputs:
+  output_folder:
+    type: uri_folder
+
+environment: azureml:animals-tensorflow-env:1
+
+code: .
+command: >-
+  python training.py
+  --train ${{inputs.training_folder}}
+  --test ${{inputs.testing_folder}}
+  --epochs ${{inputs.epochs}}
+  --output ${{outputs.output_folder}}

@@ -1,0 +1,12 @@
+name: animals-pillow-env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - azure-ai-ml
+      - azureml-mlflow
+      - pillow
+      - pandas

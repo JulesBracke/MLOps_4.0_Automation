@@ -1,0 +1,36 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+name: animals-data-split
+version: 1
+type: command
+
+display_name: Animals Train/Test Split
+description: "Merge and split three animal folders into train/test"
+
+inputs:
+  animal_1:
+    type: uri_folder
+  animal_2:
+    type: uri_folder
+  animal_3:
+    type: uri_folder
+  train_test_split_percentage:
+    type: integer
+    default: 20
+
+outputs:
+  testing_data:
+    type: uri_folder
+  training_data:
+    type: uri_folder
+
+environment: azureml:animals-pillow-env:1
+
+code: .
+command: >-
+  python data_split.py
+  --animal_1 ${{inputs.animal_1}}
+  --animal_2 ${{inputs.animal_2}}
+  --animal_3 ${{inputs.animal_3}}
+  --split_percentage ${{inputs.train_test_split_percentage}}
+  --train_out ${{outputs.training_data}}
+  --test_out ${{outputs.testing_data}}
