@@ -25,9 +25,8 @@ jobs:
       - name: Azure -- Create compute
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml compute create --file ./environment/compute.yaml
 
@@ -35,9 +34,8 @@ jobs:
       - name: Azure -- Start Compute
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml compute start --name cli-created-machine
         continue-on-error: true
@@ -46,9 +44,8 @@ jobs:
       - name: Azure -- Environment Setup
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml environment create --file ./environment/pillow.yaml
             az ml environment create --file ./environment/tensorflow.yaml
@@ -57,9 +54,8 @@ jobs:
       - name: Azure -- Component Setup
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml component create --file ./components/dataprep/dataprep.yaml
             az ml component create --file ./components/dataprep/data_split.yaml
@@ -69,9 +65,8 @@ jobs:
       - name: Azure -- Pipeline Run
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml job create \
               --file ./pipelines/animals-classification.yaml \
@@ -82,9 +77,8 @@ jobs:
       - name: Azure -- Stop Compute
         uses: Azure/CLI@v2.1.0
         with:
-          azcliversion: 2.61.0
+          azcliversion: 2.66.0
           inlineScript: |
-            az extension add --name ml -y
             az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
             az ml compute stop --name cli-created-machine
         continue-on-error: true
