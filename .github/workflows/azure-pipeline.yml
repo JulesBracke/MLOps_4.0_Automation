@@ -21,64 +21,60 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # Optional: log CLI version for your report (QUESTION 1)
+      - name: Azure CLI version
+        run: |
+          echo "Azure CLI version on runner:"
+          az --version
+
+      # One-time setup: ML extension + defaults
+      - name: Azure -- Setup ML extension & defaults
+        run: |
+          # Install or update the ml extension
+          az extension add -n ml -y || az extension update -n ml
+          # Set workspace defaults
+          az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
+
       # 1. Compute — Creation
       - name: Azure -- Create compute
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
+        run: |
+          # Create compute if it doesn't exist yet
+          if az ml compute show --name cli-created-machine >/dev/null 2>&1; then
+            echo "Compute 'cli-created-machine' already exists, skipping creation."
+          else
+            echo "Creating compute 'cli-created-machine' from YAML..."
             az ml compute create --file ./environment/compute.yaml
+          fi
 
-      # 2. Compute — Start (with continue-on-error as in assignment)
+      # 2. Compute — Start
       - name: Azure -- Start Compute
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
-            az ml compute start --name cli-created-machine
+        run: |
+          az ml compute start --name cli-created-machine || echo "Compute already running or cannot be started."
         continue-on-error: true
 
       # 3a. Environments
       - name: Azure -- Environment Setup
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
-            az ml environment create --file ./environment/pillow.yaml
-            az ml environment create --file ./environment/tensorflow.yaml
+        run: |
+          az ml environment create --file ./environment/pillow.yaml
+          az ml environment create --file ./environment/tensorflow.yaml
 
       # 3b. Components
       - name: Azure -- Component Setup
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
-            az ml component create --file ./components/dataprep/dataprep.yaml
-            az ml component create --file ./components/dataprep/data_split.yaml
-            az ml component create --file ./components/training/training.yaml
+        run: |
+          az ml component create --file ./components/dataprep/dataprep.yaml
+          az ml component create --file ./components/dataprep/data_split.yaml
+          az ml component create --file ./components/training/training.yaml
 
       # 4. Pipeline run
       - name: Azure -- Pipeline Run
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
-            az ml job create \
-              --file ./pipelines/animals-classification.yaml \
-              --stream \
-              --set name=animals-classification-${{ github.sha }}-${{ github.run_id }}
+        run: |
+          az ml job create \
+            --file ./pipelines/animals-classification.yaml \
+            --stream \
+            --set name=animals-classification-${{ github.sha }}-${{ github.run_id }}
 
       # Cleanup compute
       - name: Azure -- Stop Compute
-        uses: Azure/CLI@v2.1.0
-        with:
-          azcliversion: 2.61.0
-          inlineScript: |
-            az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
-            az ml compute stop --name cli-created-machine
+        run: |
+          az ml compute stop --name cli-created-machine || echo "Compute already stopped."
         continue-on-error: true
