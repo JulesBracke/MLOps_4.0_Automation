@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: animals-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: animals-api
+  template:
+    metadata:
+      labels:
+        app: animals-api
+    spec:
+      containers:
+        - name: animals-api
+          image: ghcr.io/JulesBracke/mlops-animals-api:main
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: animals-api
+spec:
+  type: LoadBalancer
+  selector:
+    app: animals-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP

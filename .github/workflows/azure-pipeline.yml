@@ -3,6 +3,10 @@ name: Azure ML - Animals Pipeline
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 env:
   GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
   WORKSPACE: ${{ secrets.AZURE_ML_WORKSPACE }}
@@ -30,15 +34,12 @@ jobs:
       # One-time setup: ML extension + defaults
       - name: Azure -- Setup ML extension & defaults
         run: |
-          # Install or update the ml extension
           az extension add -n ml -y || az extension update -n ml
-          # Set workspace defaults
           az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
 
       # 1. Compute — Creation
       - name: Azure -- Create compute
         run: |
-          # Create compute if it doesn't exist yet
           if az ml compute show --name cli-created-machine >/dev/null 2>&1; then
             echo "Compute 'cli-created-machine' already exists, skipping creation."
           else
@@ -114,3 +115,47 @@ jobs:
         with:
           name: docker-config
           path: inference
+
+  deploy-image:
+    needs: download
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Gather Docker meta (tags & labels)
+      - name: Docker -- Gather Tags
+        id: docker-meta-data
+        uses: docker/metadata-action@v5.5.1
+        with:
+          images: |
+            ghcr.io/${{ github.repository_owner }}/mlops-animals-api
+          tags: |
+            type=ref,event=branch
+            type=sha
+
+      # Login to GitHub Container Registry
+      - name: Docker -- Login to GHCR
+        uses: docker/login-action@v3.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Download inference code + model from previous job
+      - name: Docker -- Download API Code for Inference
+        uses: actions/download-artifact@v4.1.7
+        with:
+          name: docker-config
+          path: inference
+
+      # Build and push image
+      - name: Docker Build and push
+        id: docker_build
+        uses: docker/build-push-action@v5.3.0
+        with:
+          context: ./inference
+          push: true
+          tags: ${{ steps.docker-meta-data.outputs.tags }}
+          labels: ${{ steps.docker-meta-data.outputs.labels }}
