@@ -78,3 +78,39 @@ jobs:
         run: |
           az ml compute stop --name cli-created-machine || echo "Compute already stopped."
         continue-on-error: true
+
+  download:
+    needs: azure-pipeline
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Azure -- Setup ML extension & defaults
+        run: |
+          az extension add -n ml -y || az extension update -n ml
+          az configure --defaults group=$GROUP workspace=$WORKSPACE location=$LOCATION
+
+      - name: Azure -- Download Model
+        run: |
+          JOB_NAME="animals-classification-${{ github.sha }}-${{ github.run_id }}"
+          echo "Downloading model output from job: $JOB_NAME"
+
+          mkdir -p inference/model
+
+          az ml job download \
+            --name "$JOB_NAME" \
+            --output-name model \
+            --download-path inference/model
+
+      - name: Docker -- Upload API code from Inference
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          name: docker-config
+          path: inference
